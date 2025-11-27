@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nitish Kumar | Future Tech Architect</title>
+    <!-- Load Three.js for the Marvel-style 3D effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        /* --- 1. THE STARK AESTHETIC (ORIGINAL) --- */
+        :root {
+            --bg-void: #000000;
+            --holo-blue: #00e5ff; /* Iron Man Arc Reactor Blue */
+            --holo-glow: rgba(0, 229, 255, 0.4);
+            --glass: rgba(0, 25, 40, 0.6);
+            --border: rgba(0, 229, 255, 0.3);
+            --text-main: #e0f7fa;
+            --text-dim: #546e7a;
+            
+            --font-tech: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-code: "Courier New", Courier, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-void);
+            color: var(--text-main);
+            font-family: var(--font-tech);
+            overflow-x: hidden;
+            height: 100vh;
+            width: 100vw;
+            cursor: crosshair; /* Precision cursor */
+        }
+
+        /* --- HOLLYWOOD SCANLINES & VIGNETTE --- */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                /* Scanlines */
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 229, 255, 0.05) 3px
+                ),
+                /* Vignette */
+                radial-gradient(
+                    circle at center,
+                    transparent 50%,
+                    rgba(0, 0, 0, 0.6) 100%
+                );
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.8;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* --- HUD FRAME --- */
+        .hud-frame {
+            position: fixed;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            z-index: 998;
+            pointer-events: none;
+        }
+        .hud-frame::after {
+            content: "";
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            border: 20px solid transparent;
+            border-image: linear-gradient(45deg, var(--holo-blue), transparent 20%, transparent 80%, var(--holo-blue)) 1;
+            opacity: 0.5;
+        }
+
+        /* --- 2. LAYOUT & HUD (ORIGINAL) --- */
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        .ui-layer {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header / Top HUD */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 4rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .brand {
+            font-family: var(--font-code);
+            color: var(--holo-blue);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--holo-glow);
+        }
+
+        .status {
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            color: var(--holo-blue);
+            border: 1px solid var(--holo-blue);
+            padding: 5px 10px;
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        /* --- 3. HERO SECTION (ORIGINAL + ANIMATED TEXT) --- */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 70vh;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #fff, var(--holo-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px var(--holo-glow);
+            mix-blend-mode: screen;
+        }
+
+        /* --- SCROLL ANIMATION STYLES --- */
+        .dynamic-role-container {
+            font-family: var(--font-code);
+            font-size: 2rem; 
+            color: var(--holo-blue);
+            margin-bottom: 1.5rem;
+            height: 3rem; /* Fixed height container */
+            display: flex;
+            align-items: center;
+            overflow: hidden; /* Hide the text when it scrolls out */
+        }
+
+        .role-wrapper {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        #dynamic-text {
+            font-weight: 800; /* BOLD */
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+            display: block;
+            white-space: nowrap;
+            color: #ffffff; /* WHITE COLOR */
+        }
+
+        /* Scroll Animations */
+        .scroll-up-out {
+            animation: scrollOut 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        
+        .scroll-up-in {
+            animation: scrollIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes scrollOut {
+            0% { transform: translateY(0); opacity: 1; filter: blur(0px); }
+            100% { transform: translateY(-100%); opacity: 0; filter: blur(4px); }
+        }
+
+        @keyframes scrollIn {
+            0% { transform: translateY(100%); opacity: 0; filter: blur(4px); }
+            100% { transform: translateY(0); opacity: 1; filter: blur(0px); }
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            color: var(--text-main);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            background: var(--glass);
+            padding: 1.5rem;
+            border-left: 3px solid var(--holo-blue);
+            backdrop-filter: blur(10px);
+        }
+
+        .vision-text {
+            color: var(--holo-blue);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Floating Action Buttons */
+        .btn-stark {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            border: 1px solid var(--holo-blue);
+            color: var(--holo-blue);
+            font-family: var(--font-code);
+            text-transform: uppercase;
+            text-decoration: none;
+            font-weight: bold;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-stark::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, var(--holo-blue), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-stark:hover::before { left: 100%; }
+        .btn-stark:hover {
+            box-shadow: 0 0 20px var(--holo-blue);
+            background: rgba(0, 229, 255, 0.1);
+            color: #fff;
+        }
+
+        /* --- 4. PANELS (Glassmorphism) --- */
+        .panel {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(8px);
+            position: relative;
+            transition: 0.3s;
+        }
+
+        /* Tech Corners */
+        .panel::after {
+            content: "";
+            position: absolute;
+            top: -1px; right: -1px;
+            width: 20px; height: 20px;
+            border-top: 2px solid var(--holo-blue);
+            border-right: 2px solid var(--holo-blue);
+        }
+        .panel::before {
+            content: "";
+            position: absolute;
+            bottom: -1px; left: -1px;
+            width: 20px; height: 20px;
+            border-bottom: 2px solid var(--holo-blue);
+            border-left: 2px solid var(--holo-blue);
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
+            border-color: var(--holo-blue);
+        }
+
+        h2 {
+            color: var(--holo-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: "// ";
+            color: var(--text-dim);
+            margin-right: 10px;
+        }
+
+        /* --- 5. GRID & CONTENT --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .tech-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 0.5rem 0;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+        }
+        
+        .project-meta {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        footer {
+            margin-top: 5rem;
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 3D Background Container -->
+    <div id="canvas-container"></div>
+
+    <!-- HUD Frame Overlay -->
+    <div class="hud-frame"></div>
+
+    <div class="ui-layer">
+        
+        <!-- HEADER HUD -->
+        <header>
+            <div class="brand">NK_PROTOCOLS v2.5</div>
+            <div style="display: flex; gap: 1rem;">
+                <div class="status">SYSTEM: ONLINE</div>
+                <div class="status">VISION: UNBOUND</div>
+            </div>
+        </header>
+
+        <!-- HERO SECTION -->
+        <section class="hero">
+            <h1>Nitish Kumar</h1>
+            
+            <!-- Dynamic Role Switcher -->
+            <div class="dynamic-role-container">
+                <span>> </span>
+                <div class="role-wrapper">
+                    <span id="dynamic-text">Backend Developer</span>
+                </div>
+            </div>
+
+            <p>
+                <span class="vision-text">"Why use a keyboard when you can build the interface?"</span>
+                <br><br>
+                I am a Tech Architect obsessed with the idea of device-less interaction. 
+                My goal is to take the backend logic of <strong>Java & Microservices</strong> and project it into the real world—making the <strong>Marvel cinematic tech a reality</strong>.
+            </p>
+            <div>
+                <a href="#projects" class="btn-stark">Initiate Hologram</a>
+            </div>
+        </section>
+
+        <!-- ABOUT: THE VISION -->
+        <section id="vision">
+            <div class="panel">
+                <h2>The Blueprint</h2>
+                <p>
+                    I don't just write code; I build engines for the future. Whether it's digging into history to understand where we came from, or pushing the boundaries of Space Tech, I am always learning.
+                </p>
+                <br>
+                <p>
+                    My stack is my toolkit: <strong>Spring Boot</strong> for power, <strong>Microservices</strong> for scale, and <strong>AI</strong> for intelligence. I am currently researching how to create "Iron Man" style real-time data visualization without physical screens.
+                </p>
+            </div>
+        </section>
+
+        <!-- SKILLS: CORE MODULES -->
+        <section id="skills">
+            <div class="panel">
+                <h2>Core Modules</h2>
+                <div class="grid">
+                    <div>
+                        <div class="tech-item"><span>JAVA ENGINE</span> <span style="color:var(--holo-blue)">100%</span></div>
+                        <div class="tech-item"><span>SPRING BOOT</span> <span style="color:var(--holo-blue)">ACTIVE</span></div>
+                        <div class="tech-item"><span>MICROSERVICES</span> <span style="color:var(--holo-blue)">LINKED</span></div>
+                    </div>
+                    <div>
+                        <div class="tech-item"><span>DSA LOGIC</span> <span style="color:var(--holo-blue)">150+ SOLVED</span></div>
+                        <div class="tech-item"><span>AI / NLP</span> <span style="color:var(--holo-blue)">INTEGRATED</span></div>
+                        <div class="tech-item"><span>DOCKER</span> <span style="color:var(--holo-blue)">LOADING...</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERESTS: TARGET PARAMETERS (NEW SECTION) -->
+        <section id="interests">
+            <div class="panel">
+                <h2>Target Parameters</h2>
+                <div class="grid">
+                    <div>
+                        <div class="tech-item"><span>SPACE TECH</span> <span style="color:var(--holo-blue)">PRIORITY</span></div>
+                        <p style="font-size: 0.9rem; color: #ccc; margin-top: 5px;">Exploration of orbital mechanics and satellite data processing systems.</p>
+                    </div>
+                    <div>
+                        <div class="tech-item"><span>HEALTH TECH</span> <span style="color:var(--holo-blue)">ANALYZING</span></div>
+                        <p style="font-size: 0.9rem; color: #ccc; margin-top: 5px;">Developing algorithms for predictive diagnosis and bio-metric integration.</p>
+                    </div>
+                    <div>
+                        <div class="tech-item"><span>LATENCY REDUCTION</span> <span style="color:var(--holo-blue)">OPTIMIZING</span></div>
+                        <p style="font-size: 0.9rem; color: #ccc; margin-top: 5px;">Engineering real-time data pipelines to achieve near-zero delay.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROJECTS: HOLO-FILES -->
+        <section id="projects">
+            <h2>Mission Logs</h2>
+            <div class="grid">
+                
+                <!-- Project 1 -->
+                <div class="panel">
+                    <span class="project-meta">FILE_ID: 001 // INFRASTRUCTURE</span>
+                    <h3>SheandSoul Backend</h3>
+                    <p style="margin: 1rem 0; color: #ccc;">
+                        Constructed the central nervous system for an Android app. Integrated AI (NLP) to automate human tasks, boosting efficiency by 70%.
+                    </p>
+                    <div class="status" style="display:inline-block">JAVA SPRING</div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="panel">
+                    <span class="project-meta">FILE_ID: 002 // COMMS</span>
+                    <h3>Socket Link</h3>
+                    <p style="margin: 1rem 0; color: #ccc;">
+                        Real-time communication protocol using raw Sockets. Achieved near-zero latency for local network data transfer.
+                    </p>
+                    <div class="status" style="display:inline-block">SOCKETS</div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="panel">
+                    <span class="project-meta">FILE_ID: 003 // ARCHIVE</span>
+                    <h3>Retro Arcade</h3>
+                    <p style="margin: 1rem 0; color: #ccc;">
+                        A secure digital vault for 90s gaming history. Secured via Firebase Authentication.
+                    </p>
+                    <div class="status" style="display:inline-block">REACT</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CONTACT -->
+        <section id="contact" style="text-align: center; margin-top: 4rem;">
+            <h2 style="justify-content: center;">Establish Uplink</h2>
+            <p style="margin-bottom: 2rem;">Ready to build the future? Send the signal.</p>
+            <a href="mailto:nitishkr0214@gmail.com" class="btn-stark">TRANSMIT DATA</a>
+        </section>
+
+        <footer>
+            STARK INDUSTRIES AESTHETIC // DEVELOPED BY NITISH KUMAR // 2025
+        </footer>
+
+    </div>
+
+    <!-- SCRIPT SECTION -->
+    <script>
+        // --- 1. DYNAMIC SCROLL ANIMATION (3 SECOND INTERVAL) ---
+        const roles = ["Backend Developer", "Java Developer", "System Architect"];
+        let roleIndex = 0;
+        const textElement = document.getElementById("dynamic-text");
+
+        setInterval(() => {
+            // 1. Add class to scroll OUT
+            textElement.classList.remove("scroll-up-in");
+            textElement.classList.add("scroll-up-out");
+            
+            // 2. Wait for animation to finish (500ms), then swap text and scroll IN
+            setTimeout(() => {
+                roleIndex = (roleIndex + 1) % roles.length;
+                textElement.innerText = roles[roleIndex];
+                
+                textElement.classList.remove("scroll-up-out");
+                textElement.classList.add("scroll-up-in");
+            }, 500);
+
+        }, 3000); // 3000ms = 3 Seconds
+
+
+        // --- 2. THREE.JS SCRIPT FOR THE ARC REACTOR (UNCHANGED) ---
+        const container = document.getElementById('canvas-container');
+        
+        // Scene Setup
+        const scene = new THREE.Scene();
+        // Fog for depth
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 30;
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // Geometry: The Arc Reactor Core
+        const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0x00e5ff, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+        });
+        const reactor = new THREE.Mesh(geometry, material);
+        scene.add(reactor);
+
+        // Particles (floating data points)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 700;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100; // Spread them out
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.2,
+            color: 0x00e5ff,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Interaction (Mouse Movement)
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - window.innerWidth / 2) * 0.05;
+            mouseY = (event.clientY - window.innerHeight / 2) * 0.05;
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rotate the Reactor
+            reactor.rotation.x += 0.01;
+            reactor.rotation.y += 0.005;
+            
+            // Pulse effect (scaling)
+            const scale = 1 + Math.sin(elapsedTime * 2) * 0.05;
+            reactor.scale.set(scale, scale, scale);
+
+            // Rotate Particles
+            particlesMesh.rotation.y = -elapsedTime * 0.05;
+
+            // Mouse Parallax (The "3D Interface" feel)
+            camera.position.x += (mouseX - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
